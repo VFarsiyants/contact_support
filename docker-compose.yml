@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16.1-alpine
+    volumes:
+      - ./postgresql-data:/var/lib/postgresql/data
+      - ./example_dump:/example_dump
+    ports:
+      - 5432:5432
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    env_file:
+      - docker.env
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+  bot:
+    build: .
+    entrypoint: /usr/local/bin/docker-entrypoint.sh
+    env_file:
+      - docker.env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
